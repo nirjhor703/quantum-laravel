@@ -1,0 +1,91 @@
+<?php
+
+namespace App\Http\Controllers\Frontend\Admin_Setup;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class AdminSetupController extends Controller
+{
+    /////////////////////////// --------------- Event Methods start---------- //////////////////////////
+    // Show Event
+    public function ShowEvent(Request $req){
+        $name = "Event";
+        $js = "admin_setup/event";
+        if ($req->ajax()) {
+            return view('setup.event.ajaxBlade', compact('name', 'js'));
+        }
+        return view('setup.event.main', compact('name','js'));
+    } // End Method
+    
+    
+    
+    /////////////////////////// --------------- Event Schedule Methods start---------- //////////////////////////
+    // Show Event
+    public function ShowEventSchedule(Request $req){
+        $name = "Event Schedule";
+        $js = "admin_setup/event_schedule";
+        if ($req->ajax()) {
+            return view('setup.event_schedule.ajaxBlade', compact('name', 'js'));
+        }
+        return view('setup.event_schedule.main', compact('name','js'));
+    } // End Method
+
+
+
+    /////////////////////////// --------------- Branch Table Methods start ---------- //////////////////////////
+    // Show All Branch
+    public function ShowBranch(Request $req){
+        $name = "Branch";
+        $js = 'admin_setup/branch';
+        if ($req->ajax()) {
+            return view('setup.branch.ajaxBlade', compact('name', 'js'));
+        }
+        else{
+            return view('setup.branch.main', compact('name', 'js'));
+        }
+    } // End Method
+    
+    
+    
+    /////////////////////////// --------------- EventUser Table Methods start ---------- //////////////////////////
+    // Show All EventUser
+    public function ShowEventUser(Request $req){
+        $name = "Event Participant List";
+        $js = 'admin_setup/event_user';
+        if ($req->ajax()) {
+            return view('setup.event_user.ajaxBlade', compact('name', 'js'));
+        }
+        else{
+            return view('setup.event_user.main', compact('name', 'js'));
+        }
+    } // End Method
+
+
+
+    /////////////////////////// --------------- attendance Table Methods start ---------- //////////////////////////
+    // Show All EventUser
+    public function ShowAttendance(Request $req){
+        $name = "Attendance";
+        $js = 'admin_setup/attendance';
+        if ($req->ajax()) {
+            return view('setup.attendance.ajaxBlade', compact('name', 'js'));
+        }
+        else{
+            return view('setup.attendance.main', compact('name', 'js'));
+        }
+    } // End Method
+    
+    
+    
+    /////////////////////////// --------------- Temporary Attendance Table Methods start ---------- //////////////////////////
+    // Show All Temp Attendance
+    public function ShowTempAttendance(Request $req){
+        $name = "Temporary Attendance";
+        $js = 'admin_setup/temp_attendance';
+        if ($req->ajax()) {
+            return view('setup.temp_attendance.ajaxBlade', compact('name', 'js'));
+        }
+        return view('setup.temp_attendance.main', compact('name', 'js'));
+    } // End Method
+}

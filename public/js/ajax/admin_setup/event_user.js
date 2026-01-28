@@ -1,0 +1,225 @@
+function ShowEventUsers(res) {
+    tableInstance = new GenerateTable({
+        tableId: '#data-table',
+        data: res.data,
+        tbody: ['name',{ type:'multi-data', key:'users' }],
+        actions: (row) => {
+            return `
+                <button data-modal-id="editModal" id="edit" data-id="${row.id}"><i class="fas fa-edit"></i></button>
+            `;
+        }
+    });
+}
+
+
+
+$(document).ready(function () {
+    // Render The Table Heads
+    renderTableHead([
+        { label: 'SL:', type: 'rowsPerPage', options: [15, 30, 50, 100, 500] },
+        { label: 'Event Name', key: 'name' },
+        { label: 'Participants', key: '' },
+        { label: 'Action', type: 'button' }
+    ]);
+
+
+    // Load Data on Hard Reload
+    ReloadData('admin/event_users', ShowEventUsers);
+    
+
+    //  Edit Ajax
+    EditAjax(EditFormInputValue);
+
+
+    // Update Ajax
+    UpdateAjax('admin/event_users', {all_participants: () => JSON.stringify(JSON.parse(localStorage.getItem('participants') || '[]')), events: { selector: '#updateEvents'} }, function(){
+        $("#branch").focus();
+        localStorage.removeItem('participants');
+        $('#all-participants tbody').html("");
+        $('#participants-list').html("");
+    });
+
+
+    // Additional Edit Functionality
+    function EditFormInputValue(item){
+        localStorage.removeItem('participants');
+        $('#all-participants tbody').html("");
+        $('#participants-list').html("");
+
+        $('#id').val(item.id);
+        $('#updateEvents').val(item.id);
+
+        $('#participants').focus();
+
+        let participants = localStorage.getItem('participants') || [];
+
+        item.users.forEach(item => {
+            let productIssue = {
+                id: item.id,
+                name: item.name || '',
+                phone: item.phone || '',
+                reg_no: item.reg_no || '',
+                gender: item.gender || '',
+            };
+            participants.push(productIssue);
+        });
+
+        // Save updated productIssue back to local storage
+        localStorage.setItem('participants', JSON.stringify(participants));
+
+        let data = JSON.parse(localStorage.getItem('participants')) || [];
+
+        gridShow(data);
+    }
+
+    // Get Trantype
+    GetSelectInputList('admin/events/get', function (res) {
+        CreateSelectOptions('#events', "Select Events", res.data, 'name');
+        CreateSelectOptions('#updateEvents', "Select Events", res.data, 'name');
+    })
+
+
+    $(document).on('click', '.addData',function (e) {
+        e.preventDefault();
+        // console.log($(this));
+        
+        let id = $(this).data('id');
+        let name = $(this).data('name');
+        let phone = $(this).data('phone');
+        let reg_no = $(this).data('reg_no');
+        let gender = $(this).data('gender');
+
+        // Retrieve existing productIssue from local storage
+        let participants = JSON.parse(localStorage.getItem('participants')) || [];
+        let pid = participants.map(p => p.id);
+
+        if (pid.includes(id)) {
+            return;
+        }
+
+        let productIssue = {
+            id,
+            name,
+            phone,
+            reg_no,
+            gender,
+        };
+
+        // Add the new productIssue to the list
+        participants.push(productIssue);
+
+        // Save updated productIssue back to local storage
+        localStorage.setItem('participants', JSON.stringify(participants));
+
+        let data = JSON.parse(localStorage.getItem('participants')) || [];
+
+        gridShow(data);
+
+        $(this).remove();
+    })
+
+
+
+    $(document).off("click", '.remove-participant').on("click", '.remove-participant', function (e){
+        e.preventDefault();
+        let index = $(this).attr('data-index');
+        let perticipants = JSON.parse(localStorage.getItem('participants')) || [];
+
+        perticipants.splice(index, 1);
+        localStorage.setItem('participants', JSON.stringify(perticipants));
+
+        let data = JSON.parse(localStorage.getItem('participants')) || [];
+
+        gridShow(data);
+    })
+
+
+
+    $(document).off("keyup", '#selectedParticipants').on("keyup", '#selectedParticipants', function (e) {
+        let participants = JSON.parse(localStorage.getItem('participants') || '[]');
+        let search = $('#selectedParticipants').val().toLowerCase();
+
+        let data = participants.filter(rows =>
+            Object.values(rows).some(val =>
+                (val ?? '').toString().toLowerCase().includes(search)
+            )
+        );
+
+        gridShow(data);
+    });
+
+
+
+    FixedScrollSearch(
+        'admin/users/user_info/get/participants',
+
+        function (currentPage) {
+            let data = JSON.parse(localStorage.getItem('participants')) || [];
+            let reg_no = data.map(p => p.reg_no);
+            return {
+                search: $('#participants').val(),
+                page: currentPage,
+                reg_no: reg_no
+            };
+        }, 
+
+        '#participants', 
+
+        '#participants-list',
+
+        '#participants-list tbody',
+
+        '#participants-list tbody tr',
+    )
+
+
+
+    
+
+
+    // Upload CSV Form Submit Event
+    $('#CsvForm').off('submit',).on('submit', function (e) {
+        e.preventDefault();
+        let formData = new FormData(this);
+        $.ajax({
+            url: `${apiUrl}/admin/event_users/upload_data`,
+            method: 'POST',
+            processData: false,
+            contentType: false,
+            cache: false,
+            data: formData,
+            success: function (res) {
+                if (res.status == true) {
+                    $('#CsvForm')[0].reset();
+
+                    $('#message').html(res.message)
+
+                    tableInstance.updateRow(res.updatedData.id, res.updatedData);
+
+                    toastr.success(res.message, 'Added!');
+                }
+            }
+        });
+    })
+});
+
+
+
+
+function gridShow(data) {
+    $('#all-participants tbody').html("");
+
+    data.forEach((item, index) => {
+        $('#all-participants tbody').append(`
+            <tr>
+                <td>${index + 1}</td>
+                <td>${item.reg_no}</td>
+                <td>${item.name}</td>
+                <td>${item.phone}</td>
+                <td>${item.gender}</td>
+                <td><div class="center"><button class="remove remove-participant"  data-index="${index}"><i class="fas fa-trash"></i></button></div></td>
+            </tr>`
+        );
+    });
+}
+

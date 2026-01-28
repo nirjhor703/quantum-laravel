@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Http\Controllers\Frontend;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class ReportsController extends Controller
+{
+    /////////////////////////// --------------- Attedance Statement Methods start ---------- //////////////////////////
+    // Show All Attedance Statement
+    public function ShowAttendanceStatement(Request $req){
+        $name = "Attedance Statement";
+        $js = 'reports/attendance_statement';
+        if ($req->ajax()) {
+            return view('report.attendance_statement.ajaxBlade', compact('name', 'js'));
+        }
+        else{
+            return view('report.attendance_statement.main', compact('name', 'js'));
+        }
+    } // End Method
+    
+    
+    
+    /////////////////////////// --------------- Temp Attedance Statement Methods start ---------- //////////////////////////
+    // Show All Temp Attedance Statement
+    public function ShowTempAttendanceStatement(Request $req){
+        $name = "Temp Attedance Statement";
+        $js = 'reports/temp_attendance_statement';
+        if ($req->ajax()) {
+            return view('report.temp_attendance_statement.ajaxBlade', compact('name', 'js'));
+        }
+        else{
+            return view('report.temp_attendance_statement.main', compact('name', 'js'));
+        }
+    } // End Method
+    
+    
+    
+    /////////////////////////// --------------- Attedance Sheet Methods start ---------- //////////////////////////
+    // Show All Attedance Sheet
+    public function ShowAttendanceSheet(Request $req){
+        $name = "Attedance Sheet";
+        $js = 'reports/attendance_sheet';
+        if ($req->ajax()) {
+            return view('report.attendance_sheet.ajaxBlade', compact('name', 'js'));
+        }
+        else{
+            return view('report.attendance_sheet.main', compact('name', 'js'));
+        }
+    } // End Method
+}

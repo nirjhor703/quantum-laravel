@@ -1,0 +1,48 @@
+<?php
+
+namespace App\Http\Controllers\API\Backend\Reports;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
+
+use App\Models\Attendence_Temp;
+
+class TempAttendanceStatementController extends Controller
+{
+    // Show All Client Return Details Statement
+    public function Show(Request $req){
+        $req->validate([
+            'events' => 'required',
+            'date' => 'required'
+        ]);
+
+        $data = Attendence_Temp::with('events:id,name','participants:gender,qt_status,reg_no,phone,name,branch','participants.branchs:id,short')
+        ->where('event_id', $req->events)
+        ->where('date', $req->date)
+        ->get();
+
+        return response()->json([
+            'status'=> true,
+            'data' => $data,
+        ], 200);
+    } // End Method
+
+
+
+    // Print Client Return Details Report
+    public function Print(Request $req){
+        $req->validate([
+            'events' => 'required',
+            'date' => 'required'
+        ]);
+
+        $data = Attendence_Temp::with('events:id,name','participants:gender,qt_status,reg_no,phone,name,branch','participants.branchs:id,short')
+        ->where('event_id', $req->events)
+        ->where('date', $req->date)
+        ->get();
+        
+        $pdf = Pdf::loadView('report.temp_attendance_statement.print', compact('data'))->setPaper('a4', 'portrait');
+        return $pdf->stream();
+    } // End Method
+}
