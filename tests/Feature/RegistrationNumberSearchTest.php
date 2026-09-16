@@ -29,6 +29,7 @@ class RegistrationNumberSearchTest extends TestCase
 
     public function test_it_searches_newline_comma_and_space_separated_registration_numbers_in_input_order(): void
     {
+        $this->actingAs($this->loginUser());
         $branch = Branch::create(['branch' => 'Banani Branch']);
         $this->participant($branch->id, 'M-1588/16', 'Muhammad Rezaul Haque', 2239);
         $this->participant($branch->id, 'F-73/437', 'Mrs. Shimul Akhter', 1167);
@@ -47,6 +48,7 @@ class RegistrationNumberSearchTest extends TestCase
 
     public function test_it_rejects_more_than_one_thousand_unique_registration_numbers(): void
     {
+        $this->actingAs($this->loginUser());
         $numbers = collect(range(1, 1001))->map(fn ($number) => "M-{$number}/26")->implode("\n");
 
         $this->postJson(route('registration-search.results'), ['reg_nos' => $numbers])
@@ -56,6 +58,7 @@ class RegistrationNumberSearchTest extends TestCase
 
     public function test_xlsx_download_contains_a_real_excel_workbook_with_the_searched_participant(): void
     {
+        $this->actingAs($this->loginUser());
         $branch = Branch::create(['branch' => 'Banani Branch']);
         $this->participant($branch->id, 'M-1588/16', 'Muhammad Rezaul Haque', 2239);
 
@@ -69,16 +72,7 @@ class RegistrationNumberSearchTest extends TestCase
 
     public function test_authenticated_user_can_open_the_search_page(): void
     {
-        $role = Role::create(['name' => 'Super Admin']);
-        $user = Login_User::create([
-            'user_id' => 'SA000000001',
-            'name' => 'Test Admin',
-            'email' => 'admin@example.test',
-            'role' => $role->id,
-            'password' => 'secret',
-        ]);
-
-        $this->actingAs($user)
+        $this->actingAs($this->loginUser())
             ->get(route('registration-search.index'))
             ->assertOk()
             ->assertSee('Search by Reg No')
@@ -89,6 +83,7 @@ class RegistrationNumberSearchTest extends TestCase
 
     public function test_pdf_download_returns_a_pdf_with_the_searched_participant(): void
     {
+        $this->actingAs($this->loginUser());
         $branch = Branch::create(['branch' => 'Banani Branch']);
         $this->participant($branch->id, 'M-1588/16', 'Muhammad Rezaul Haque', 2239);
 
@@ -96,6 +91,25 @@ class RegistrationNumberSearchTest extends TestCase
 
         $response->assertOk()->assertHeader('content-type', 'application/pdf');
         $this->assertSame('%PDF', substr($response->getContent(), 0, 4));
+    }
+
+    public function test_guest_is_redirected_to_login_from_the_search_page(): void
+    {
+        $this->get(route('registration-search.index'))
+            ->assertRedirect(route('login'));
+    }
+
+    private function loginUser(): Login_User
+    {
+        $role = Role::firstOrCreate(['name' => 'Super Admin']);
+
+        return Login_User::create([
+            'user_id' => 'SA'.str_pad((string) Login_User::count(), 9, '0', STR_PAD_LEFT),
+            'name' => 'Test Admin',
+            'email' => 'admin'.Login_User::count().'@example.test',
+            'role' => $role->id,
+            'password' => 'secret',
+        ]);
     }
 
     private function participant(int $branchId, string $regNo, string $name, int $sl): User_Info

@@ -27,7 +27,7 @@ Route::get('/search', function () {
     return view('search');
 });
 
-Route::prefix('/search')->controller(RegistrationNumberSearchController::class)->group(function () {
+Route::prefix('/search')->middleware('auth')->controller(RegistrationNumberSearchController::class)->group(function () {
     Route::get('/registration-numbers', 'index')->name('registration-search.index');
     Route::post('/registration-numbers/results', 'results')->name('registration-search.results');
     Route::post('/registration-numbers/pdf', 'pdf')->name('registration-search.pdf');
