@@ -17,7 +17,7 @@
         <!-- jQuery Link -->
         <script src="{{ asset('js/jQuery-3.7.1.js') }}"></script>
         <!--  Api Url  -->
-        <script>let apiUrl = "{{ config('app.api_url') }}";</script>
+        <script>let apiUrl = "https://quantumlv.teamsolutionsbangladesh.com/api";</script>
         <!-- Common Ajax File Load -->
         <script src="{{ asset('js/ajax/common_ajax/ajax_setup.js') }}"></script>
         {{-- datatable js  --}}

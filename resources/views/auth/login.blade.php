@@ -69,7 +69,7 @@
         <script>
             
             $(document).ready(function () {
-                var apiUrl = "{{ config('app.api_url') }}";
+                var apiUrl = "https://quantumlv.teamsolutionsbangladesh.com/api";
                 console.log(apiUrl);
                 
                 const message = sessionStorage.getItem('redirectMessage');
@@ -80,6 +80,7 @@
                 }
                 
                 $(document).on('submit', '#login-form', function (e) {
+
                     e.preventDefault();
                     let isValid = true;
                     let formData = new FormData(this);
