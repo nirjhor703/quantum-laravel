@@ -70,6 +70,27 @@
             </ul>
         </li>
 
+        {{-- Search Menu --}}
+        <li class="menu-item">
+            <div class="menu-title {{ Request::segment(1) == 'search' ? 'active':''}}">
+                <p>
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    Search
+                </p>
+                <i class="fas fa-angle-right {{ Request::segment(1) == 'search' ? 'rotate':''}}"></i>
+            </div>
+            <ul class="sub-menu {{ Request::segment(1) == 'search' ? 'show':''}}">
+                <li class="sub-menu-item" data-url="{{ route('registration-search.index') }}">
+                    <div class="menu-title {{ Request::routeIs('registration-search.*') ? 'active':''}}">
+                        <p>
+                            <i class="fa-solid fa-address-card"></i>
+                            Search by Reg No
+                        </p>
+                    </div>
+                </li>
+            </ul>
+        </li>
+
         {{-- Branches Menu --}}
         <li class="menu-item" data-url="{{route('show.branch')}}">
             <div class="menu-title {{ (Request::segment(1) == 'admin' && Request::segment(2) == 'branches') ? 'active':''}}">

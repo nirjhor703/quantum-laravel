@@ -11,7 +11,9 @@ use App\Http\Controllers\Frontend\Admin_Setup\UsersController;
 use App\Http\Controllers\Frontend\Admin_Setup\AdminSetupController;
 use App\Http\Controllers\API\Backend\Users\UserInfoController;
 use App\Http\Controllers\Frontend\ReportsController;
+use App\Http\Controllers\Frontend\RegistrationNumberSearchController;
 
+Route::redirect('/', '/login');
 
 Route::get('/link', function(){
     Artisan::call('storage:link');
@@ -23,6 +25,13 @@ Route::get('/layout', function () {
 
 Route::get('/search', function () {
     return view('search');
+});
+
+Route::prefix('/search')->controller(RegistrationNumberSearchController::class)->group(function () {
+    Route::get('/registration-numbers', 'index')->name('registration-search.index');
+    Route::post('/registration-numbers/results', 'results')->name('registration-search.results');
+    Route::post('/registration-numbers/pdf', 'pdf')->name('registration-search.pdf');
+    Route::post('/registration-numbers/xlsx', 'xlsx')->name('registration-search.xlsx');
 });
 
 Route::controller(UserInfoController::class)->group(function(){

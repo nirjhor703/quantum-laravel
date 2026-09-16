@@ -69,8 +69,7 @@
         <script>
             
             $(document).ready(function () {
-                var apiUrl = "{{ config('app.api_url') }}";
-                console.log(apiUrl);
+                const loginUrl = "{{ route('api.login') }}";
                 
                 const message = sessionStorage.getItem('redirectMessage');
                 
@@ -107,7 +106,7 @@
 
                     if(isValid){
                         $.ajax({
-                            url: `${apiUrl}/login`,
+                            url: loginUrl,
                             type: 'POST',
                             data: formData,
                             contentType: false,

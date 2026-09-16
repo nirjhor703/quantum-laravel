@@ -1,0 +1,134 @@
+.registration-search-page {
+    min-height: 100%;
+    padding: 30px;
+    background: #f2f4f8;
+    color: #141b29;
+}
+
+.registration-search-card,
+.registration-results-card {
+    background: #fff;
+    border: 1px solid #e4e8ef;
+    border-radius: 18px;
+    box-shadow: 0 4px 18px rgba(30, 47, 72, .05);
+}
+
+.registration-search-card { padding: 22px; }
+.registration-results-card { margin-top: 22px; overflow: hidden; }
+
+.registration-search-heading {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.registration-search-icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: #d9e9ff;
+    color: #0877ef;
+}
+
+.registration-search-heading h2,
+.registration-results-header h3,
+.registration-download-title-row h3 { margin: 0; font-weight: 500; }
+.registration-search-heading h2 { font-size: 25px; }
+.registration-search-heading p,
+.registration-results-header p { margin-top: 3px; color: #697180; font-size: 14px; }
+
+#registrationNumbers {
+    width: 100%;
+    min-height: 82px;
+    padding: 12px;
+    border: 1px solid #cad2df;
+    border-radius: 8px;
+    resize: vertical;
+    outline: none;
+}
+
+#registrationNumbers:focus { border-color: #0877ef; box-shadow: 0 0 0 3px rgba(8, 119, 239, .12); }
+
+.registration-search-actions,
+.registration-results-header,
+.registration-download-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.registration-search-actions { gap: 16px; margin-top: 12px; }
+.registration-search-actions small { color: #697180; font-size: 12px; }
+
+.registration-proceed-button,
+.registration-download-button {
+    border: 0;
+    border-radius: 6px;
+    padding: 10px 18px;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.registration-proceed-button { background: #0877ef; }
+.registration-download-button { background: #1b925b; }
+.registration-proceed-button:disabled,
+.registration-download-button:disabled { opacity: .55; cursor: not-allowed; }
+
+.registration-search-error { min-height: 18px; margin-top: 5px; color: #d72f3f; font-size: 13px; }
+.registration-results-header { padding: 16px; }
+.registration-results-header h3 { font-size: 19px; }
+.registration-results-scroll { overflow-x: auto; }
+
+.registration-results-table { width: 100%; min-width: 1080px; border-collapse: collapse; }
+.registration-results-table th { padding: 11px 8px; background: #dfe7f2; text-align: center; font-size: 14px; }
+.registration-results-table td { padding: 8px; border: 1px solid #d7dce3; vertical-align: middle; }
+.registration-results-table td:first-child,
+.registration-results-table td:nth-child(3) { text-align: center; }
+.registration-result-image-cell { min-width: 120px; text-align: center; }
+.registration-result-image-cell strong { display: block; margin-bottom: 6px; }
+.registration-result-image-cell img { width: 94px; height: 104px; object-fit: cover; background: #eef1f5; }
+.registration-empty-row td { padding: 30px; text-align: center !important; color: #697180; }
+
+.registration-missing-notice {
+    margin: 0 16px 14px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: #fff4db;
+    color: #7b5500;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.registration-download-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(12, 17, 24, .58);
+}
+
+.registration-download-modal.show { display: flex; }
+.registration-download-dialog { width: min(570px, 100%); padding: 16px; border-radius: 15px; background: #fff; box-shadow: 0 20px 55px rgba(0, 0, 0, .28); }
+.registration-download-title-row h3 { font-size: 18px; }
+.registration-download-close { border: 0; background: transparent; color: #707782; font-size: 30px; cursor: pointer; }
+.registration-download-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 20px; }
+.registration-format-card { width: 100%; min-height: 138px; border: 1px solid #d6deea; border-radius: 14px; background: #fff; cursor: pointer; }
+.registration-format-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(26, 45, 75, .1); }
+.registration-format-card i { display: block; margin-bottom: 10px; font-size: 46px; }
+.registration-format-card span { font-size: 20px; }
+.registration-format-pdf i { color: #dc3545; }
+.registration-format-xlsx i { color: #1b925b; }
+
+@media (max-width: 700px) {
+    .registration-search-page { padding: 14px; }
+    .registration-search-actions { align-items: stretch; flex-direction: column; }
+    .registration-proceed-button { width: 100%; }
+    .registration-download-options { grid-template-columns: 1fr; }
+}

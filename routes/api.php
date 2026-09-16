@@ -41,7 +41,7 @@ Route::controller(ForgetPasswordController::class)->group(function () {
     Route::post('/resetpassword',  'ResetPassword');
 });
 
-Route::post('/login', [AuthController::class, 'Login'])->middleware(['web']);
+Route::post('/login', [AuthController::class, 'Login'])->middleware(['web'])->name('api.login');
 
 
 // Route::middleware(['auth:sanctum', ApiValidUser::class, CheckPermission::class])->group(function () {
@@ -194,5 +194,4 @@ Route::middleware(['auth:sanctum'])->group(function () {
         });
     });
 });
-
 
