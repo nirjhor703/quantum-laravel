@@ -95,6 +95,58 @@ class RegistrationNumberSearchTest extends TestCase
         $zip->close();
     }
 
+    public function test_xlsx_uses_a_photo_available_from_the_public_storage_path(): void
+    {
+        $this->actingAs($this->loginUser());
+        Storage::fake('public');
+        $photo = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAQAAABFaP0WAAAADElEQVR42mNk+M8AAAICAQB7CY+oAAAAAElFTkSuQmCC'
+        );
+        $publicPhoto = public_path('storage/qt_img/xlsx-public-only-test.png');
+        if (! is_dir(dirname($publicPhoto))) {
+            mkdir(dirname($publicPhoto), 0777, true);
+        }
+        file_put_contents($publicPhoto, $photo);
+
+        try {
+            $branch = Branch::create(['branch' => 'Banani Branch']);
+            $participant = $this->participant($branch->id, 'M-1588/16', 'Muhammad Rezaul Haque', 2239);
+            $participant->update(['image' => 'qt_img/xlsx-public-only-test.png']);
+
+            $response = $this->post(route('registration-search.xlsx'), ['reg_nos' => 'M-1588/16']);
+            $zip = new ZipArchive;
+            $zip->open($response->baseResponse->getFile()->getPathname());
+
+            $this->assertSame($photo, $zip->getFromName('xl/media/image1.png'));
+            $zip->close();
+        } finally {
+            @unlink($publicPhoto);
+        }
+    }
+
+    public function test_xlsx_places_the_participant_number_above_the_photo(): void
+    {
+        $this->actingAs($this->loginUser());
+        Storage::fake('public');
+        Storage::disk('public')->put('qt_img/2239.png', base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+        ));
+        $branch = Branch::create(['branch' => 'Banani Branch']);
+        $participant = $this->participant($branch->id, 'M-1588/16', 'Muhammad Rezaul Haque', 2239);
+        $participant->update(['image' => 'qt_img/2239.png']);
+
+        $response = $this->post(route('registration-search.xlsx'), ['reg_nos' => 'M-1588/16']);
+        $zip = new ZipArchive;
+        $zip->open($response->baseResponse->getFile()->getPathname());
+
+        $sheet = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $drawing = $zip->getFromName('xl/drawings/drawing1.xml');
+        $this->assertStringContainsString('<c r="B2" t="inlineStr" s="2"><is><t>2239</t></is></c>', $sheet);
+        $this->assertStringContainsString('<xdr:rowOff>238125</xdr:rowOff>', $drawing);
+
+        $zip->close();
+    }
+
     public function test_authenticated_user_can_open_the_search_page(): void
     {
         $this->actingAs($this->loginUser())

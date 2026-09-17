@@ -135,7 +135,7 @@ class RegistrationNumberSearchController extends Controller
         $zip->addFromString('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
         $zip->addFromString('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Participants" sheetId="1" r:id="rId1"/></sheets></workbook>');
         $zip->addFromString('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
-        $zip->addFromString('xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="2"><xf fontId="0" fillId="0" borderId="0" xfId="0"/><xf fontId="1" fillId="0" borderId="0" xfId="0"/></cellXfs></styleSheet>');
+        $zip->addFromString('xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="3"><xf fontId="0" fillId="0" borderId="0" xfId="0"/><xf fontId="1" fillId="0" borderId="0" xfId="0"/><xf fontId="1" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="top"/></xf></cellXfs></styleSheet>');
         $zip->addFromString('xl/worksheets/sheet1.xml', $this->worksheetXml($participants, $images->isNotEmpty()));
 
         if ($images->isNotEmpty()) {
@@ -155,7 +155,7 @@ class RegistrationNumberSearchController extends Controller
 
     private function worksheetXml(Collection $participants, bool $hasImages): string
     {
-        $headers = ['Sl', 'Image ID', 'Age', 'Occupation', 'Status', 'Name', 'Branch', 'Reg No.', 'Mobile'];
+        $headers = ['Sl', 'Img', 'Age', 'Occupation', 'Status', 'Name', 'Branch', 'Reg No.', 'Mobile'];
         $rows = [$headers];
 
         foreach ($participants->values() as $index => $participant) {
@@ -177,11 +177,11 @@ class RegistrationNumberSearchController extends Controller
             $cells = '';
             foreach ($row as $columnIndex => $value) {
                 $reference = $this->columnName($columnIndex + 1).($rowIndex + 1);
-                $style = $rowIndex === 0 ? ' s="1"' : '';
+                $style = $rowIndex === 0 ? ' s="1"' : ($columnIndex === 1 ? ' s="2"' : '');
                 $escaped = htmlspecialchars((string) ($value ?? ''), ENT_XML1 | ENT_QUOTES, 'UTF-8');
                 $cells .= "<c r=\"{$reference}\" t=\"inlineStr\"{$style}><is><t>{$escaped}</t></is></c>";
             }
-            $height = $rowIndex === 0 ? '' : ' ht="78" customHeight="1"';
+            $height = $rowIndex === 0 ? '' : ' ht="90" customHeight="1"';
             $xmlRows .= '<row r="'.($rowIndex + 1).'"'.$height.'>'.$cells.'</row>';
         }
 
@@ -194,9 +194,7 @@ class RegistrationNumberSearchController extends Controller
     {
         return $participants->values()->map(function (array $participant, int $index): ?array {
             $relativePath = ltrim((string) ($participant['image'] ?? ''), '/');
-            $path = $relativePath !== '' && Storage::disk('public')->exists($relativePath)
-                ? Storage::disk('public')->path($relativePath)
-                : public_path('images/male.png');
+            $path = $this->spreadsheetImagePath($relativePath);
             $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
             if (! is_file($path) || ! in_array($extension, ['jpg', 'jpeg', 'png'], true)) {
@@ -211,6 +209,28 @@ class RegistrationNumberSearchController extends Controller
                 'row' => $index + 1,
             ];
         })->filter()->values();
+    }
+
+    private function spreadsheetImagePath(string $relativePath): string
+    {
+        if ($relativePath !== '') {
+            $candidates = [
+                public_path('storage/'.$relativePath),
+                storage_path('app/public/'.$relativePath),
+            ];
+
+            if (Storage::disk('public')->exists($relativePath)) {
+                array_unshift($candidates, Storage::disk('public')->path($relativePath));
+            }
+
+            foreach (array_unique($candidates) as $candidate) {
+                if (is_file($candidate) && is_readable($candidate)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return public_path('images/male.png');
     }
 
     private function contentTypesXml(Collection $images): string
@@ -232,7 +252,7 @@ class RegistrationNumberSearchController extends Controller
         $anchors = $images->map(function (array $image): string {
             $id = $image['id'];
 
-            return '<xdr:oneCellAnchor><xdr:from><xdr:col>1</xdr:col><xdr:colOff>47625</xdr:colOff><xdr:row>'.$image['row'].'</xdr:row><xdr:rowOff>47625</xdr:rowOff></xdr:from><xdr:ext cx="857250" cy="857250"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="'.$id.'" name="Participant '.$id.'"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId'.$id.'"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="857250" cy="857250"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>';
+            return '<xdr:oneCellAnchor><xdr:from><xdr:col>1</xdr:col><xdr:colOff>47625</xdr:colOff><xdr:row>'.$image['row'].'</xdr:row><xdr:rowOff>238125</xdr:rowOff></xdr:from><xdr:ext cx="857250" cy="857250"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="'.$id.'" name="Participant '.$id.'"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId'.$id.'"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="857250" cy="857250"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>';
         })->implode('');
 
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'.$anchors.'</xdr:wsDr>';
