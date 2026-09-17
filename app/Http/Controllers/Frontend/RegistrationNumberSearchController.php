@@ -181,13 +181,13 @@ class RegistrationNumberSearchController extends Controller
                 $escaped = htmlspecialchars((string) ($value ?? ''), ENT_XML1 | ENT_QUOTES, 'UTF-8');
                 $cells .= "<c r=\"{$reference}\" t=\"inlineStr\"{$style}><is><t>{$escaped}</t></is></c>";
             }
-            $height = $rowIndex === 0 ? '' : ' ht="75" customHeight="1"';
+            $height = $rowIndex === 0 ? '' : ' ht="70" customHeight="1"';
             $xmlRows .= '<row r="'.($rowIndex + 1).'"'.$height.'>'.$cells.'</row>';
         }
 
         $drawing = $hasImages ? '<drawing r:id="rId1"/>' : '';
 
-        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><cols><col min="1" max="1" width="7" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/><col min="3" max="3" width="12" customWidth="1"/><col min="4" max="7" width="22" customWidth="1"/><col min="8" max="9" width="18" customWidth="1"/></cols><sheetData>'.$xmlRows.'</sheetData>'.$drawing.'</worksheet>';
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><cols><col min="1" max="1" width="7" customWidth="1"/><col min="2" max="2" width="12" customWidth="1"/><col min="3" max="3" width="12" customWidth="1"/><col min="4" max="7" width="22" customWidth="1"/><col min="8" max="9" width="18" customWidth="1"/></cols><sheetData>'.$xmlRows.'</sheetData>'.$drawing.'</worksheet>';
     }
 
     private function spreadsheetImages(Collection $participants): Collection
@@ -208,7 +208,7 @@ class RegistrationNumberSearchController extends Controller
 
             $heightPixels = 70;
             $widthPixels = (int) round($heightPixels * ($size[0] / $size[1]));
-            $columnWidthPixels = 117;
+            $columnWidthPixels = 89;
 
             return [
                 'id' => $index + 1,
@@ -267,7 +267,7 @@ class RegistrationNumberSearchController extends Controller
             $height = $image['height_emu'];
             $columnOffset = $image['column_offset_emu'];
 
-            return '<xdr:oneCellAnchor><xdr:from><xdr:col>1</xdr:col><xdr:colOff>'.$columnOffset.'</xdr:colOff><xdr:row>'.$image['row'].'</xdr:row><xdr:rowOff>238125</xdr:rowOff></xdr:from><xdr:ext cx="'.$width.'" cy="'.$height.'"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="'.$id.'" name="Participant '.$id.'"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId'.$id.'"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'.$width.'" cy="'.$height.'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>';
+            return '<xdr:oneCellAnchor><xdr:from><xdr:col>1</xdr:col><xdr:colOff>'.$columnOffset.'</xdr:colOff><xdr:row>'.$image['row'].'</xdr:row><xdr:rowOff>180975</xdr:rowOff></xdr:from><xdr:ext cx="'.$width.'" cy="'.$height.'"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="'.$id.'" name="Participant '.$id.'"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId'.$id.'"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'.$width.'" cy="'.$height.'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>';
         })->implode('');
 
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'.$anchors.'</xdr:wsDr>';
