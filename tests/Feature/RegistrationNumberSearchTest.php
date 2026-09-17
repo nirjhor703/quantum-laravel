@@ -8,6 +8,8 @@ use App\Models\Role;
 use App\Models\User_Info;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use ZipArchive;
 use Tests\TestCase;
 
 class RegistrationNumberSearchTest extends TestCase
@@ -68,6 +70,29 @@ class RegistrationNumberSearchTest extends TestCase
             ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
         $this->assertSame('PK', substr(file_get_contents($response->baseResponse->getFile()->getPathname()), 0, 2));
+    }
+
+    public function test_xlsx_download_embeds_the_participant_photo(): void
+    {
+        $this->actingAs($this->loginUser());
+        Storage::fake('public');
+        Storage::disk('public')->put('qt_img/2239.png', base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+        ));
+
+        $branch = Branch::create(['branch' => 'Banani Branch']);
+        $participant = $this->participant($branch->id, 'M-1588/16', 'Muhammad Rezaul Haque', 2239);
+        $participant->update(['image' => 'qt_img/2239.png']);
+
+        $response = $this->post(route('registration-search.xlsx'), ['reg_nos' => 'M-1588/16']);
+        $zip = new ZipArchive;
+        $zip->open($response->baseResponse->getFile()->getPathname());
+
+        $this->assertNotFalse($zip->locateName('xl/media/image1.png'));
+        $this->assertStringContainsString('xdr:oneCellAnchor', $zip->getFromName('xl/drawings/drawing1.xml'));
+        $this->assertStringContainsString('drawing r:id="rId1"', $zip->getFromName('xl/worksheets/sheet1.xml'));
+
+        $zip->close();
     }
 
     public function test_authenticated_user_can_open_the_search_page(): void

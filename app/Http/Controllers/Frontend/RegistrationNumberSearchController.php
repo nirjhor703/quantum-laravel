@@ -8,6 +8,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use ZipArchive;
@@ -128,19 +129,31 @@ class RegistrationNumberSearchController extends Controller
         $file = tempnam(sys_get_temp_dir(), 'reg-search-');
         $zip = new ZipArchive;
         $zip->open($file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $images = $this->spreadsheetImages($participants);
 
-        $zip->addFromString('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>');
+        $zip->addFromString('[Content_Types].xml', $this->contentTypesXml($images));
         $zip->addFromString('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
         $zip->addFromString('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Participants" sheetId="1" r:id="rId1"/></sheets></workbook>');
         $zip->addFromString('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
         $zip->addFromString('xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="2"><xf fontId="0" fillId="0" borderId="0" xfId="0"/><xf fontId="1" fillId="0" borderId="0" xfId="0"/></cellXfs></styleSheet>');
-        $zip->addFromString('xl/worksheets/sheet1.xml', $this->worksheetXml($participants));
+        $zip->addFromString('xl/worksheets/sheet1.xml', $this->worksheetXml($participants, $images->isNotEmpty()));
+
+        if ($images->isNotEmpty()) {
+            $zip->addFromString('xl/worksheets/_rels/sheet1.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>');
+            $zip->addFromString('xl/drawings/drawing1.xml', $this->drawingXml($images));
+            $zip->addFromString('xl/drawings/_rels/drawing1.xml.rels', $this->drawingRelationshipsXml($images));
+
+            foreach ($images as $image) {
+                $zip->addFile($image['path'], 'xl/media/'.$image['filename']);
+            }
+        }
+
         $zip->close();
 
         return $file;
     }
 
-    private function worksheetXml(Collection $participants): string
+    private function worksheetXml(Collection $participants, bool $hasImages): string
     {
         $headers = ['Sl', 'Image ID', 'Age', 'Occupation', 'Status', 'Name', 'Branch', 'Reg No.', 'Mobile'];
         $rows = [$headers];
@@ -168,10 +181,68 @@ class RegistrationNumberSearchController extends Controller
                 $escaped = htmlspecialchars((string) ($value ?? ''), ENT_XML1 | ENT_QUOTES, 'UTF-8');
                 $cells .= "<c r=\"{$reference}\" t=\"inlineStr\"{$style}><is><t>{$escaped}</t></is></c>";
             }
-            $xmlRows .= '<row r="'.($rowIndex + 1).'">'.$cells.'</row>';
+            $height = $rowIndex === 0 ? '' : ' ht="78" customHeight="1"';
+            $xmlRows .= '<row r="'.($rowIndex + 1).'"'.$height.'>'.$cells.'</row>';
         }
 
-        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="7" customWidth="1"/><col min="2" max="3" width="12" customWidth="1"/><col min="4" max="7" width="22" customWidth="1"/><col min="8" max="9" width="18" customWidth="1"/></cols><sheetData>'.$xmlRows.'</sheetData></worksheet>';
+        $drawing = $hasImages ? '<drawing r:id="rId1"/>' : '';
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><cols><col min="1" max="1" width="7" customWidth="1"/><col min="2" max="2" width="16" customWidth="1"/><col min="3" max="3" width="12" customWidth="1"/><col min="4" max="7" width="22" customWidth="1"/><col min="8" max="9" width="18" customWidth="1"/></cols><sheetData>'.$xmlRows.'</sheetData>'.$drawing.'</worksheet>';
+    }
+
+    private function spreadsheetImages(Collection $participants): Collection
+    {
+        return $participants->values()->map(function (array $participant, int $index): ?array {
+            $relativePath = ltrim((string) ($participant['image'] ?? ''), '/');
+            $path = $relativePath !== '' && Storage::disk('public')->exists($relativePath)
+                ? Storage::disk('public')->path($relativePath)
+                : public_path('images/male.png');
+            $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+            if (! is_file($path) || ! in_array($extension, ['jpg', 'jpeg', 'png'], true)) {
+                return null;
+            }
+
+            return [
+                'id' => $index + 1,
+                'path' => $path,
+                'extension' => $extension,
+                'filename' => 'image'.($index + 1).'.'.$extension,
+                'row' => $index + 1,
+            ];
+        })->filter()->values();
+    }
+
+    private function contentTypesXml(Collection $images): string
+    {
+        $imageTypes = $images->pluck('extension')->unique()->map(function (string $extension): string {
+            $contentType = $extension === 'png' ? 'image/png' : 'image/jpeg';
+
+            return '<Default Extension="'.$extension.'" ContentType="'.$contentType.'"/>';
+        })->implode('');
+        $drawingType = $images->isNotEmpty()
+            ? '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>'
+            : '';
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>'.$imageTypes.'<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'.$drawingType.'</Types>';
+    }
+
+    private function drawingXml(Collection $images): string
+    {
+        $anchors = $images->map(function (array $image): string {
+            $id = $image['id'];
+
+            return '<xdr:oneCellAnchor><xdr:from><xdr:col>1</xdr:col><xdr:colOff>47625</xdr:colOff><xdr:row>'.$image['row'].'</xdr:row><xdr:rowOff>47625</xdr:rowOff></xdr:from><xdr:ext cx="857250" cy="857250"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="'.$id.'" name="Participant '.$id.'"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId'.$id.'"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="857250" cy="857250"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>';
+        })->implode('');
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'.$anchors.'</xdr:wsDr>';
+    }
+
+    private function drawingRelationshipsXml(Collection $images): string
+    {
+        $relationships = $images->map(fn (array $image): string => '<Relationship Id="rId'.$image['id'].'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/'.$image['filename'].'"/>')->implode('');
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'.$relationships.'</Relationships>';
     }
 
     private function columnName(int $column): string
