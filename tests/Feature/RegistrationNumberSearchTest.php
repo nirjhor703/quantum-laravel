@@ -142,10 +142,12 @@ class RegistrationNumberSearchTest extends TestCase
         $sheet = $zip->getFromName('xl/worksheets/sheet1.xml');
         $drawing = $zip->getFromName('xl/drawings/drawing1.xml');
         $this->assertStringContainsString('<c r="B2" t="inlineStr" s="2"><is><t>2239</t></is></c>', $sheet);
+        $this->assertStringContainsString('<c r="C2" t="inlineStr" s="3"><is><t>54</t></is></c>', $sheet);
         $this->assertStringContainsString('<row r="2" ht="70" customHeight="1">', $sheet);
         $this->assertStringContainsString('<xdr:rowOff>180975</xdr:rowOff>', $drawing);
         $this->assertStringContainsString('<xdr:ext cx="666750" cy="666750"/>', $drawing);
         $this->assertStringContainsString('<xdr:colOff>90488</xdr:colOff>', $drawing);
+        $this->assertStringContainsString('<alignment vertical="center"/>', $zip->getFromName('xl/styles.xml'));
 
         $zip->close();
     }
