@@ -181,7 +181,7 @@ class RegistrationNumberSearchController extends Controller
                 $escaped = htmlspecialchars((string) ($value ?? ''), ENT_XML1 | ENT_QUOTES, 'UTF-8');
                 $cells .= "<c r=\"{$reference}\" t=\"inlineStr\"{$style}><is><t>{$escaped}</t></is></c>";
             }
-            $height = $rowIndex === 0 ? '' : ' ht="90" customHeight="1"';
+            $height = $rowIndex === 0 ? '' : ' ht="75" customHeight="1"';
             $xmlRows .= '<row r="'.($rowIndex + 1).'"'.$height.'>'.$cells.'</row>';
         }
 
@@ -201,12 +201,24 @@ class RegistrationNumberSearchController extends Controller
                 return null;
             }
 
+            $size = @getimagesize($path);
+            if ($size === false || $size[0] < 1 || $size[1] < 1) {
+                return null;
+            }
+
+            $heightPixels = 70;
+            $widthPixels = (int) round($heightPixels * ($size[0] / $size[1]));
+            $columnWidthPixels = 117;
+
             return [
                 'id' => $index + 1,
                 'path' => $path,
                 'extension' => $extension,
                 'filename' => 'image'.($index + 1).'.'.$extension,
                 'row' => $index + 1,
+                'width_emu' => $widthPixels * 9525,
+                'height_emu' => $heightPixels * 9525,
+                'column_offset_emu' => (int) round(max(0, ($columnWidthPixels - $widthPixels) / 2) * 9525),
             ];
         })->filter()->values();
     }
@@ -251,8 +263,11 @@ class RegistrationNumberSearchController extends Controller
     {
         $anchors = $images->map(function (array $image): string {
             $id = $image['id'];
+            $width = $image['width_emu'];
+            $height = $image['height_emu'];
+            $columnOffset = $image['column_offset_emu'];
 
-            return '<xdr:oneCellAnchor><xdr:from><xdr:col>1</xdr:col><xdr:colOff>47625</xdr:colOff><xdr:row>'.$image['row'].'</xdr:row><xdr:rowOff>238125</xdr:rowOff></xdr:from><xdr:ext cx="857250" cy="857250"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="'.$id.'" name="Participant '.$id.'"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId'.$id.'"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="857250" cy="857250"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>';
+            return '<xdr:oneCellAnchor><xdr:from><xdr:col>1</xdr:col><xdr:colOff>'.$columnOffset.'</xdr:colOff><xdr:row>'.$image['row'].'</xdr:row><xdr:rowOff>238125</xdr:rowOff></xdr:from><xdr:ext cx="'.$width.'" cy="'.$height.'"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="'.$id.'" name="Participant '.$id.'"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId'.$id.'"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'.$width.'" cy="'.$height.'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>';
         })->implode('');
 
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'.$anchors.'</xdr:wsDr>';

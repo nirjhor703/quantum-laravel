@@ -143,6 +143,8 @@ class RegistrationNumberSearchTest extends TestCase
         $drawing = $zip->getFromName('xl/drawings/drawing1.xml');
         $this->assertStringContainsString('<c r="B2" t="inlineStr" s="2"><is><t>2239</t></is></c>', $sheet);
         $this->assertStringContainsString('<xdr:rowOff>238125</xdr:rowOff>', $drawing);
+        $this->assertStringContainsString('<xdr:ext cx="666750" cy="666750"/>', $drawing);
+        $this->assertStringContainsString('<xdr:colOff>223838</xdr:colOff>', $drawing);
 
         $zip->close();
     }
